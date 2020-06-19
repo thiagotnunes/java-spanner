@@ -34,6 +34,8 @@ public class DatabaseInfo {
 
     abstract Builder setEarliestVersionTime(Timestamp earliestVersionTime);
 
+    public abstract Builder setEncryptionConfigInfo(EncryptionConfigInfo encryptionConfigInfo);
+
     abstract Builder setProto(com.google.spanner.admin.database.v1.Database proto);
 
     /** Builds the database from this builder. */
@@ -47,6 +49,8 @@ public class DatabaseInfo {
     private RestoreInfo restoreInfo;
     private String versionRetentionPeriod;
     private Timestamp earliestVersionTime;
+    private EncryptionConfigInfo encryptionConfigInfo;
+
     private com.google.spanner.admin.database.v1.Database proto;
 
     BuilderImpl(DatabaseId id) {
@@ -60,6 +64,7 @@ public class DatabaseInfo {
       this.restoreInfo = other.restoreInfo;
       this.versionRetentionPeriod = other.versionRetentionPeriod;
       this.earliestVersionTime = other.earliestVersionTime;
+      this.encryptionConfigInfo = other.encryptionConfigInfo;
       this.proto = other.proto;
     }
 
@@ -94,6 +99,12 @@ public class DatabaseInfo {
     }
 
     @Override
+    public Builder setEncryptionConfigInfo(@Nullable EncryptionConfigInfo encryptionConfigInfo) {
+      this.encryptionConfigInfo = encryptionConfigInfo;
+      return this;
+    }
+
+    @Override
     Builder setProto(@Nullable com.google.spanner.admin.database.v1.Database proto) {
       this.proto = proto;
       return this;
@@ -118,6 +129,7 @@ public class DatabaseInfo {
   private final RestoreInfo restoreInfo;
   private final String versionRetentionPeriod;
   private final Timestamp earliestVersionTime;
+  private final EncryptionConfigInfo encryptionConfigInfo;
   private final com.google.spanner.admin.database.v1.Database proto;
 
   public DatabaseInfo(DatabaseId id, State state) {
@@ -127,6 +139,7 @@ public class DatabaseInfo {
     this.restoreInfo = null;
     this.versionRetentionPeriod = null;
     this.earliestVersionTime = null;
+    this.encryptionConfigInfo = null;
     this.proto = null;
   }
 
@@ -137,6 +150,7 @@ public class DatabaseInfo {
     this.restoreInfo = builder.restoreInfo;
     this.versionRetentionPeriod = builder.versionRetentionPeriod;
     this.earliestVersionTime = builder.earliestVersionTime;
+    this.encryptionConfigInfo = builder.encryptionConfigInfo;
     this.proto = builder.proto;
   }
 
@@ -173,6 +187,14 @@ public class DatabaseInfo {
     return restoreInfo;
   }
 
+  /**
+   * Returns the {@link EncryptionConfigInfo} of the database if the database is encrypted, or
+   * <code>null</code> if this database is not encrypted.
+   */
+  public @Nullable EncryptionConfigInfo getEncryptionConfigInfo() {
+    return encryptionConfigInfo;
+  }
+
   /** Returns the raw proto instance that was used to construct this {@link Database}. */
   public @Nullable com.google.spanner.admin.database.v1.Database getProto() {
     return proto;
@@ -191,6 +213,7 @@ public class DatabaseInfo {
         && state == that.state
         && Objects.equals(createTime, that.createTime)
         && Objects.equals(restoreInfo, that.restoreInfo)
+        && Objects.equals(encryptionConfigInfo, that.encryptionConfigInfo)
         && Objects.equals(versionRetentionPeriod, that.versionRetentionPeriod)
         && Objects.equals(earliestVersionTime, that.earliestVersionTime);
   }
@@ -202,6 +225,7 @@ public class DatabaseInfo {
         state,
         createTime,
         restoreInfo,
+        encryptionConfigInfo,
         versionRetentionPeriod,
         earliestVersionTime);
   }
@@ -209,11 +233,12 @@ public class DatabaseInfo {
   @Override
   public String toString() {
     return String.format(
-        "Database[%s, %s, %s, %s, %s, %s]",
+        "Database[%s, %s, %s, %s, %s, %s, %s]",
         id.getName(),
         state,
         createTime,
         restoreInfo,
+        encryptionConfigInfo,
         versionRetentionPeriod,
         earliestVersionTime);
   }

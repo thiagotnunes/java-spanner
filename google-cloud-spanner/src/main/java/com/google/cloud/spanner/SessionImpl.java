@@ -252,7 +252,8 @@ class SessionImpl implements Session {
 
   @Override
   public AsyncTransactionManagerImpl transactionManagerAsync() {
-    return new AsyncTransactionManagerImpl(this, currentSpan);
+    return new AsyncTransactionManagerImpl(
+        this, currentSpan, spanner.getOptions().isInlineBeginForReadWriteTransaction());
   }
 
   @Override

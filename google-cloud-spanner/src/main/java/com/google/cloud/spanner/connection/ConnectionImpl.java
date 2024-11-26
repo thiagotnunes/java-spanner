@@ -28,6 +28,7 @@ import static com.google.cloud.spanner.connection.ConnectionProperties.AUTO_PART
 import static com.google.cloud.spanner.connection.ConnectionProperties.DATA_BOOST_ENABLED;
 import static com.google.cloud.spanner.connection.ConnectionProperties.DDL_IN_TRANSACTION_MODE;
 import static com.google.cloud.spanner.connection.ConnectionProperties.DELAY_TRANSACTION_START_UNTIL_FIRST_WRITE;
+import static com.google.cloud.spanner.connection.ConnectionProperties.DIALECT;
 import static com.google.cloud.spanner.connection.ConnectionProperties.DIRECTED_READ;
 import static com.google.cloud.spanner.connection.ConnectionProperties.KEEP_TRANSACTION_ALIVE;
 import static com.google.cloud.spanner.connection.ConnectionProperties.MAX_COMMIT_DELAY;
@@ -103,6 +104,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
@@ -118,6 +120,7 @@ import org.threeten.bp.Instant;
 
 /** Implementation for {@link Connection}, the generic Spanner connection API (not JDBC). */
 class ConnectionImpl implements Connection {
+
   private static final String INSTRUMENTATION_SCOPE = "cloud.google.com/java";
   private static final String SINGLE_USE_TRANSACTION = "SingleUseTransaction";
   private static final String READ_ONLY_TRANSACTION = "ReadOnlyTransaction";
@@ -160,6 +163,7 @@ class ConnectionImpl implements Connection {
   private static final ParsedStatement RELEASE_STATEMENT =
       AbstractStatementParser.getInstance(Dialect.GOOGLE_STANDARD_SQL)
           .parse(Statement.of("RELEASE s1"));
+  public static final String GOOGLESQL_DIALECT_HINT = "/* GOOGLESQL */ ";
 
   /**
    * Exception that is used to register the stacktrace of the code that opened a {@link Connection}.
@@ -383,7 +387,10 @@ class ConnectionImpl implements Connection {
 
   private AbstractStatementParser getStatementParser() {
     if (this.statementParser == null) {
-      this.statementParser = AbstractStatementParser.getInstance(dbClient.getDialect());
+      Dialect dbDialect = dbClient.getDialect();
+      Dialect connDialect = this.getConnectionPropertyValue(DIALECT);
+      Dialect parserDialect = Optional.ofNullable(connDialect).orElse(dbDialect);
+      this.statementParser = AbstractStatementParser.getInstance(parserDialect);
     }
     return this.statementParser;
   }
@@ -525,6 +532,27 @@ class ConnectionImpl implements Connection {
   @Override
   public Dialect getDialect() {
     return dbClient.getDialect();
+  }
+
+  @Override
+  public Dialect getConnectionDialect() {
+    return Optional.ofNullable(getConnectionPropertyValue(DIALECT))
+        .orElse(getDialect());
+  }
+
+  @Override
+  public void setConnectionDialect(Dialect dialect) {
+    ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
+    ConnectionPreconditions.checkState(!isBatchActive(), "Cannot set dialect while in a batch");
+    ConnectionPreconditions.checkState(
+        !isTransactionStarted(), "Cannot set dialect while a transaction is active");
+    ConnectionPreconditions.checkState(
+        !(isAutocommit() && isInTransaction()),
+        "Cannot set dialect while in a temporary transaction");
+    ConnectionPreconditions.checkState(
+        !transactionBeginMarked, "Cannot set dialect when a transaction has begun");
+    setConnectionPropertyValue(DIALECT, dialect);
+    clearLastTransactionAndSetDefaultTransactionOptions();
   }
 
   @Override
@@ -1576,6 +1604,16 @@ class ConnectionImpl implements Connection {
     return new MergedResultSet(this, partitionIds, getMaxPartitionedParallelism());
   }
 
+  // FIXME: This is added on all GoogleSQL dialect queries at the moment. This is only necessary for
+  // PostgreSQL database queries with GoogleSQL dialect override.
+  private Statement addDialectHintIfRequired(Statement stmt) {
+    Dialect connDialect = getConnectionPropertyValue(DIALECT);
+    if (connDialect == Dialect.GOOGLE_STANDARD_SQL) {
+      return stmt.toBuilder().replace(GOOGLESQL_DIALECT_HINT + stmt.getSql()).build();
+    }
+    return stmt;
+  }
+
   /**
    * Parses the given statement as a query and executes it. Throws a {@link SpannerException} if the
    * statement is not a query.
@@ -1585,7 +1623,8 @@ class ConnectionImpl implements Connection {
     Preconditions.checkNotNull(query);
     Preconditions.checkNotNull(analyzeMode);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = getStatementParser().parse(query, buildQueryOptions());
+    Statement updatedQuery = addDialectHintIfRequired(query);
+    ParsedStatement parsedStatement = getStatementParser().parse(updatedQuery, buildQueryOptions());
     if (parsedStatement.isQuery() || parsedStatement.isUpdate()) {
       switch (parsedStatement.getType()) {
         case CLIENT_SIDE:
@@ -1624,7 +1663,8 @@ class ConnectionImpl implements Connection {
       CallType callType, Statement query, AnalyzeMode analyzeMode, QueryOption... options) {
     Preconditions.checkNotNull(query);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = getStatementParser().parse(query, buildQueryOptions());
+    Statement updatedQuery = addDialectHintIfRequired(query);
+    ParsedStatement parsedStatement = getStatementParser().parse(updatedQuery, buildQueryOptions());
     if (parsedStatement.isQuery() || parsedStatement.isUpdate()) {
       switch (parsedStatement.getType()) {
         case CLIENT_SIDE:
@@ -1678,7 +1718,8 @@ class ConnectionImpl implements Connection {
   public long executeUpdate(Statement update) {
     Preconditions.checkNotNull(update);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = getStatementParser().parse(update);
+    Statement updatedQuery = addDialectHintIfRequired(update);
+    ParsedStatement parsedStatement = getStatementParser().parse(updatedQuery);
     if (parsedStatement.isUpdate()) {
       switch (parsedStatement.getType()) {
         case UPDATE:
@@ -1706,7 +1747,8 @@ class ConnectionImpl implements Connection {
   public ApiFuture<Long> executeUpdateAsync(Statement update) {
     Preconditions.checkNotNull(update);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = getStatementParser().parse(update);
+    Statement updatedQuery = addDialectHintIfRequired(update);
+    ParsedStatement parsedStatement = getStatementParser().parse(updatedQuery);
     if (parsedStatement.isUpdate()) {
       switch (parsedStatement.getType()) {
         case UPDATE:

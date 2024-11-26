@@ -20,6 +20,15 @@
       "exampleStatements": ["show spanner.readonly","show variable spanner.readonly"]
     },
     {
+      "name": "SHOW [VARIABLE] SPANNER.DIALECT",
+      "executorName": "ClientSideStatementNoParamExecutor",
+      "resultType": "RESULT_SET",
+      "statementType": "SHOW_DIALECT",
+      "regex": "(?is)\\A\\s*show\\s+(?:variable\\s+)?spanner\\.dialect\\s*\\z",
+      "method": "statementShowDialect",
+      "exampleStatements": ["show spanner.dialect","show variable spanner.dialect"]
+    },
+    {
       "name": "SHOW [VARIABLE] SPANNER.RETRY_ABORTS_INTERNALLY",
       "executorName": "ClientSideStatementNoParamExecutor",
       "resultType": "RESULT_SET",
@@ -401,6 +410,21 @@
         "separator": "(?:=|\\s+TO\\s+)",
         "allowedValues": "(TRUE|FALSE)",
         "converterName": "ClientSideStatementValueConverters$BooleanConverter"
+      }
+    },
+    {
+      "name": "SET SPANNER.DIALECT =|TO GOOGLE_STANDARD_SQL|POSTGRESQL",
+      "executorName": "ClientSideStatementSetExecutor",
+      "resultType": "NO_RESULT",
+      "statementType": "SET_DIALECT",
+      "regex": "(?is)\\A\\s*set\\s+spanner\\.dialect(?:\\s*=\\s*|\\s+to\\s+)(.*)\\z",
+      "method": "statementSetDialect",
+      "exampleStatements": ["set spanner.dialect = GOOGLE_STANDARD_SQL", "set spanner.dialect = POSTGRESQL"],
+      "setStatement": {
+        "propertyName": "SPANNER.DIALECT",
+        "separator": "(?:=|\\s+TO\\s+)",
+        "allowedValues": "(GOOGLE_STANDARD_SQL|POSTGRESQL)",
+        "converterName": "ClientSideStatementValueConverters$DialectConverter"
       }
     },
     {

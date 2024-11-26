@@ -227,7 +227,7 @@ class ConnectionProperties {
           "Sets the dialect to use for new databases that are created by this connection.",
           null,
           DialectConverter.INSTANCE,
-          Context.STARTUP);
+          Context.USER);
   static final ConnectionProperty<Boolean> TRACK_SESSION_LEAKS =
       create(
           TRACK_SESSION_LEAKS_PROPERTY_NAME,

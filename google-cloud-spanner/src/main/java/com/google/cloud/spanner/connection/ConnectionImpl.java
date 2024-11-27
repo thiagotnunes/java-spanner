@@ -485,6 +485,7 @@ class ConnectionImpl implements Connection {
     this.connectionState.resetValue(OPTIMIZER_VERSION, context, inTransaction);
     this.connectionState.resetValue(OPTIMIZER_STATISTICS_PACKAGE, context, inTransaction);
     this.connectionState.resetValue(RPC_PRIORITY, context, inTransaction);
+    this.connectionState.resetValue(DIALECT, context, inTransaction);
     this.connectionState.resetValue(DDL_IN_TRANSACTION_MODE, context, inTransaction);
     this.connectionState.resetValue(RETURN_COMMIT_STATS, context, inTransaction);
     this.connectionState.resetValue(
@@ -1897,6 +1898,9 @@ class ConnectionImpl implements Connection {
 
   private QueryOption[] mergeQueryRequestOptions(
       ParsedStatement parsedStatement, QueryOption... options) {
+    if (getConnectionPropertyValue(DIALECT) != null) {
+      options = appendQueryOption(options, Options.dialect(getConnectionPropertyValue(DIALECT)));
+    }
     if (getConnectionPropertyValue(RPC_PRIORITY) != null) {
       options =
           appendQueryOption(options, Options.priority(getConnectionPropertyValue(RPC_PRIORITY)));
@@ -1943,6 +1947,14 @@ class ConnectionImpl implements Connection {
       } else {
         options = Arrays.copyOf(options, options.length + 1);
         options[options.length - 1] = Options.priority(getConnectionPropertyValue(RPC_PRIORITY));
+      }
+    }
+    if (getConnectionPropertyValue(DIALECT) != null) {
+      if (options == null ||options.length == 0) {
+        options = new UpdateOption[] {Options.dialect(getConnectionPropertyValue(DIALECT))};
+      } else {
+        options = Arrays.copyOf(options, options.length + 1);
+        options[options.length - 1] = Options.dialect(getConnectionPropertyValue(DIALECT));
       }
     }
     return options;

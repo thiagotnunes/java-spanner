@@ -757,6 +757,9 @@ class ClientSideStatementValueConverters {
 
     private DialectConverter() {}
 
+    /** Constructor needed for reflection. */
+    public DialectConverter(String allowedValues) {}
+
     @Override
     public Class<Dialect> getParameterClass() {
       return Dialect.class;

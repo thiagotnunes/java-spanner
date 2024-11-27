@@ -225,9 +225,9 @@ class ConnectionProperties {
       create(
           DIALECT_PROPERTY_NAME,
           "Sets the dialect to use for new databases that are created by this connection.",
-          Dialect.GOOGLE_STANDARD_SQL,
+          null,
           DialectConverter.INSTANCE,
-          Context.STARTUP);
+          Context.USER);
   static final ConnectionProperty<Boolean> TRACK_SESSION_LEAKS =
       create(
           TRACK_SESSION_LEAKS_PROPERTY_NAME,

@@ -1478,6 +1478,14 @@ public interface Connection extends AutoCloseable {
     throw new UnsupportedOperationException("Not implemented");
   }
 
+  default Dialect getConnectionDialect() {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  default void setConnectionDialect(Dialect dialect) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
   /** The {@link DatabaseClient} that is used by this {@link Connection}. */
   @InternalApi
   default DatabaseClient getDatabaseClient() {

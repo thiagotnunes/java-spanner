@@ -184,6 +184,10 @@ public final class Options implements Serializable {
     return new PriorityOption(priority);
   }
 
+  public static ReadQueryUpdateTransactionOption dialect(Dialect dialect) {
+    return new DialectOption(dialect);
+  }
+
   public static TransactionOption maxCommitDelay(Duration maxCommitDelay) {
     Preconditions.checkArgument(!maxCommitDelay.isNegative(), "maxCommitDelay should be positive");
     return new MaxCommitDelayOption(maxCommitDelay);
@@ -377,6 +381,20 @@ public final class Options implements Serializable {
     }
   }
 
+  static final class DialectOption extends InternalOption
+      implements ReadQueryUpdateTransactionOption {
+    private final Dialect dialect;
+
+    DialectOption(Dialect dialect) {
+      this.dialect = dialect;
+    }
+
+    @Override
+    void appendToOptions(Options options) {
+      options.dialect = dialect;
+    }
+  }
+
   static final class TagOption extends InternalOption implements ReadQueryUpdateTransactionOption {
     private final String tag;
 
@@ -460,6 +478,7 @@ public final class Options implements Serializable {
   private String pageToken;
   private String filter;
   private RpcPriority priority;
+  private Dialect dialect;
   private String tag;
   private String etag;
   private Boolean validateOnly;
@@ -539,6 +558,14 @@ public final class Options implements Serializable {
 
   Priority priority() {
     return priority == null ? null : priority.proto;
+  }
+
+  boolean hasDialect() {
+    return dialect != null;
+  }
+
+  Dialect dialect() {
+    return dialect;
   }
 
   boolean hasTag() {
@@ -693,6 +720,7 @@ public final class Options implements Serializable {
         && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(filter(), that.filter())
         && Objects.equals(priority(), that.priority())
+        && Objects.equals(dialect(), that.dialect())
         && Objects.equals(tag(), that.tag())
         && Objects.equals(etag(), that.etag())
         && Objects.equals(validateOnly(), that.validateOnly())
@@ -759,6 +787,9 @@ public final class Options implements Serializable {
     }
     if (orderBy != null) {
       result = 31 * result + orderBy.hashCode();
+    }
+    if (dialect != null) {
+      result = 31 * result + dialect.hashCode();
     }
     return result;
   }

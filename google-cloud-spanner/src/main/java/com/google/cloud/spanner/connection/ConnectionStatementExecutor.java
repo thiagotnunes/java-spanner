@@ -16,6 +16,7 @@
 
 package com.google.cloud.spanner.connection;
 
+import com.google.cloud.spanner.Dialect;
 import com.google.cloud.spanner.Options.RpcPriority;
 import com.google.cloud.spanner.Statement;
 import com.google.cloud.spanner.TimestampBound;
@@ -43,6 +44,10 @@ interface ConnectionStatementExecutor {
   StatementResult statementSetReadOnly(Boolean readOnly);
 
   StatementResult statementShowReadOnly();
+
+  StatementResult statementSetDialect(Dialect dialect);
+
+  StatementResult statementShowDialect();
 
   StatementResult statementSetRetryAbortsInternally(Boolean retryAbortsInternally);
 

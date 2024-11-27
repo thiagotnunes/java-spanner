@@ -673,9 +673,14 @@ abstract class AbstractReadContext
 
   ExecuteSqlRequest.Builder getExecuteSqlRequestBuilder(
       Statement statement, QueryMode queryMode, Options options, boolean withTransactionSelector) {
+    String sql = statement.getSql();
+    // FIXME: This should be a request / query option parameter instead
+    if (options.hasDialect() && options.dialect() == Dialect.GOOGLE_STANDARD_SQL) {
+      sql = "/* GOOGLESQL */ " + sql;
+    }
     ExecuteSqlRequest.Builder builder =
         ExecuteSqlRequest.newBuilder()
-            .setSql(statement.getSql())
+            .setSql(sql)
             .setQueryMode(queryMode)
             .setSession(session.getName());
     addParameters(builder, statement.getParameters());

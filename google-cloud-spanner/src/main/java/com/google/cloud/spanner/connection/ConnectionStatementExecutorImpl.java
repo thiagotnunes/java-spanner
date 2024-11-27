@@ -32,6 +32,7 @@ import static com.google.cloud.spanner.connection.StatementResult.ClientSideStat
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_DATA_BOOST_ENABLED;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_DEFAULT_TRANSACTION_ISOLATION;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_DELAY_TRANSACTION_START_UNTIL_FIRST_WRITE;
+import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_DIALECT;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_DIRECTED_READ;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_EXCLUDE_TXN_FROM_CHANGE_STREAMS;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_KEEP_TRANSACTION_ALIVE;
@@ -62,6 +63,7 @@ import static com.google.cloud.spanner.connection.StatementResult.ClientSideStat
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_COMMIT_TIMESTAMP;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_DATA_BOOST_ENABLED;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_DELAY_TRANSACTION_START_UNTIL_FIRST_WRITE;
+import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_DIALECT;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_DIRECTED_READ;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_EXCLUDE_TXN_FROM_CHANGE_STREAMS;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_KEEP_TRANSACTION_ALIVE;
@@ -178,6 +180,21 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
         String.format("%sREADONLY", getNamespace(connection.getDialect())),
         getConnection().isReadOnly(),
         SHOW_READONLY);
+  }
+
+  @Override
+  public StatementResult statementSetDialect(Dialect dialect) {
+    Preconditions.checkNotNull(dialect);
+    getConnection().setConnectionDialect(dialect);
+    return noResult(SET_DIALECT);
+  }
+
+  @Override
+  public StatementResult statementShowDialect() {
+    return StatementResultImpl.resultSet(
+        String.format("%sDIALECT", getNamespace(connection.getDialect())),
+        getConnection().getConnectionDialect(),
+        SHOW_DIALECT);
   }
 
   @Override

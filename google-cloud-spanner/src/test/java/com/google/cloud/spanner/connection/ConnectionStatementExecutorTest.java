@@ -33,6 +33,7 @@ import com.google.cloud.spanner.connection.PgTransactionMode.AccessMode;
 import com.google.cloud.spanner.connection.PgTransactionMode.IsolationLevel;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.math3.stat.inference.GTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -124,6 +125,14 @@ public class ConnectionStatementExecutorTest {
   public void testStatementGetReadTimestamp() {
     subject.statementShowReadTimestamp();
     verify(connection).getReadTimestampOrNull();
+  }
+
+  @Test
+  public void testStatementGetConnectionDialect() {
+    subject.statementSetDialect(Dialect.GOOGLE_STANDARD_SQL);
+    when(connection.getConnectionDialect()).thenReturn(Dialect.GOOGLE_STANDARD_SQL);
+    subject.statementShowDialect();
+    verify(connection).getConnectionDialect();
   }
 
   @Test
